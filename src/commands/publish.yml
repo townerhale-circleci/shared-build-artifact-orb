@@ -1,0 +1,45 @@
+description: >
+  Generate a checksum-verified build manifest and upload both the artifact
+  directory and manifest to CircleCI artifact storage.
+
+parameters:
+  build-key:
+    type: string
+    description: Canonical identity shared by producer and consumer pipelines.
+  artifact-root:
+    type: string
+    description: Directory uploaded to CircleCI artifact storage.
+  artifact-glob:
+    type: string
+    default: "*"
+    description: Glob relative to artifact-root that must select exactly one file.
+  artifact-destination:
+    type: string
+    description: Destination prefix used by store_artifacts and recorded in the manifest.
+  metadata-json:
+    type: string
+    default: "{}"
+    description: Optional JSON object with platform, build type, and other identity inputs.
+  manifest-output:
+    type: string
+    default: /tmp/shared-build-publish/build-manifest.json
+    description: Temporary path where the generated manifest is written.
+
+steps:
+  - run:
+      name: Create shared build manifest
+      shell: /usr/bin/env python3
+      environment:
+        SHARED_BUILD_PUBLISH_BUILD_KEY: << parameters.build-key >>
+        SHARED_BUILD_PUBLISH_ARTIFACT_ROOT: << parameters.artifact-root >>
+        SHARED_BUILD_PUBLISH_ARTIFACT_GLOB: << parameters.artifact-glob >>
+        SHARED_BUILD_PUBLISH_ARTIFACT_DESTINATION: << parameters.artifact-destination >>
+        SHARED_BUILD_PUBLISH_METADATA_JSON: << parameters.metadata-json >>
+        SHARED_BUILD_PUBLISH_MANIFEST_OUTPUT: << parameters.manifest-output >>
+      command: <<include(scripts/create_manifest.py)>>
+  - store_artifacts:
+      path: << parameters.artifact-root >>
+      destination: << parameters.artifact-destination >>
+  - store_artifacts:
+      path: << parameters.manifest-output >>
+      destination: build-manifest.json

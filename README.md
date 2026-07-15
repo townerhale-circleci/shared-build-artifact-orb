@@ -2,6 +2,13 @@
 
 A generic CircleCI orb for deduplicating build artifacts across projects.
 
+The producer uses `shared-build/publish` after its build step. The command:
+
+1. Selects exactly one artifact from the configured directory.
+2. Computes its SHA-256.
+3. Writes `build-manifest.json`.
+4. Uploads both the artifact directory and manifest using `store_artifacts`.
+
 The `ensure` job:
 
 1. Runs under a caller-supplied `serial-group` keyed by a canonical build identity.
@@ -23,7 +30,7 @@ The `ensure` job:
 }
 ```
 
-The producer stores both the manifest and artifact using `store_artifacts`.
+The `publish` command creates this manifest automatically.
 
 ## Authentication
 
@@ -38,7 +45,10 @@ circleci orb pack src > orb.yml
 circleci orb process orb.yml
 ```
 
-See `src/examples/ensure-wheel.yml` for usage.
+See:
+
+- `src/examples/publish-artifact.yml` for producer usage.
+- `src/examples/ensure-wheel.yml` for consumer usage.
 
 ## Limitations
 

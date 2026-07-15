@@ -1,0 +1,28 @@
+description: Publish one wheel and its build identity manifest.
+
+usage:
+  version: 2.1
+
+  orbs:
+    shared-build: townerhale/shared-build-artifact@0.1.0
+
+  jobs:
+    build-wheel:
+      docker:
+        - image: cimg/python:3.12
+      steps:
+        - checkout
+        - run:
+            name: Build wheel
+            command: python -m build --wheel --outdir wheelhouse
+        - shared-build/publish:
+            build-key: << pipeline.git.revision >>-linux-release
+            artifact-root: wheelhouse
+            artifact-glob: "*.whl"
+            artifact-destination: wheelhouse
+            metadata-json: '{"platform":"linux","build_type":"Release"}'
+
+  workflows:
+    build:
+      jobs:
+        - build-wheel
