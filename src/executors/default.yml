@@ -1,0 +1,4 @@
+description: Lightweight executor for API lookup and artifact download.
+
+docker:
+  - image: cimg/python:3.12

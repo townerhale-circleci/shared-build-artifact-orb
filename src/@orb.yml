@@ -1,0 +1,11 @@
+version: 2.1
+
+description: >
+  Deduplicate build artifacts across CircleCI projects by build identity.
+  A serialized consumer searches producer manifests, triggers one producer
+  pipeline on a miss, waits for completion, verifies the artifact checksum,
+  and persists the downloaded artifact to the consumer workflow workspace.
+
+display:
+  home_url: https://github.com/townerhale-circleci/shared-build-artifact-orb
+  source_url: https://github.com/townerhale-circleci/shared-build-artifact-orb

@@ -1,0 +1,44 @@
+description: >
+  Serialize requests for one build identity, download the shared artifact, and
+  make it available to a downstream team test.
+
+usage:
+  version: 2.1
+
+  orbs:
+    shared-build: townerhale/shared-build-artifact@0.1.0
+
+  parameters:
+    build_key:
+      type: string
+      default: replace-with-a-canonical-build-key
+
+  jobs:
+    test-eltwise:
+      docker:
+        - image: cimg/python:3.12
+      steps:
+        - attach_workspace:
+            at: /tmp/shared-build
+        - run:
+            name: Use shared artifact
+            command: |
+              test -f /tmp/shared-build/wheel.whl
+              test -f /tmp/shared-build/build-reference.json
+
+  workflows:
+    eltwise:
+      jobs:
+        - shared-build/ensure:
+            name: ensure-wheel
+            build-key: << pipeline.parameters.build_key >>
+            producer-project-slug: circleci/ORG_ID/BUILD_PROJECT_ID
+            producer-definition-id: PIPELINE_DEFINITION_ID
+            producer-job-name: build-wheel
+            branch: << pipeline.git.branch >>
+            artifact-filename: wheel.whl
+            context: shared-build-artifacts
+            serial-group: shared-build/<< pipeline.parameters.build_key >>
+        - test-eltwise:
+            requires:
+              - ensure-wheel

@@ -1,0 +1,69 @@
+description: >
+  Find a matching producer artifact by build key or trigger one producer
+  pipeline on a miss. The downloaded artifact and reference metadata are
+  persisted to this workflow's workspace.
+
+executor:
+  name: default
+
+resource_class: small
+
+parameters:
+  build-key:
+    type: string
+    description: SHA-256 or other canonical identity for the requested build.
+  producer-project-slug:
+    type: string
+    description: CircleCI project slug that owns the build producer pipeline.
+  producer-definition-id:
+    type: string
+    description: Pipeline definition ID for the producer.
+  producer-job-name:
+    type: string
+    default: build-wheel
+    description: Name of the producer job that stores the manifest and artifact.
+  branch:
+    type: string
+    description: Config and checkout branch used for producer lookup and triggering.
+  search-limit:
+    type: integer
+    default: 25
+    description: Maximum recent producer pipelines whose manifests are inspected.
+  timeout-seconds:
+    type: integer
+    default: 3600
+    description: Maximum time to wait for a newly triggered producer pipeline.
+  poll-interval:
+    type: integer
+    default: 3
+    description: Producer status polling interval in seconds.
+  workspace-root:
+    type: string
+    default: /tmp/shared-build
+    description: Workspace root containing the downloaded artifact and reference.
+  artifact-filename:
+    type: string
+    default: artifact
+    description: Local filename for the downloaded artifact.
+
+steps:
+  - run:
+      name: Find or produce shared build artifact
+      shell: /usr/bin/env python3
+      environment:
+        SHARED_BUILD_KEY: << parameters.build-key >>
+        SHARED_BUILD_PRODUCER_PROJECT_SLUG: << parameters.producer-project-slug >>
+        SHARED_BUILD_PRODUCER_DEFINITION_ID: << parameters.producer-definition-id >>
+        SHARED_BUILD_PRODUCER_JOB_NAME: << parameters.producer-job-name >>
+        SHARED_BUILD_BRANCH: << parameters.branch >>
+        SHARED_BUILD_ARTIFACT_OUTPUT: << parameters.workspace-root >>/<< parameters.artifact-filename >>
+        SHARED_BUILD_REFERENCE_OUTPUT: << parameters.workspace-root >>/build-reference.json
+        SHARED_BUILD_SEARCH_LIMIT: << parameters.search-limit >>
+        SHARED_BUILD_TIMEOUT_SECONDS: << parameters.timeout-seconds >>
+        SHARED_BUILD_POLL_INTERVAL: << parameters.poll-interval >>
+      command: <<include(scripts/ensure_artifact.py)>>
+  - persist_to_workspace:
+      root: << parameters.workspace-root >>
+      paths:
+        - << parameters.artifact-filename >>
+        - build-reference.json
